@@ -1,5 +1,23 @@
 {
   "extends": "astro/tsconfigs/strict",
-  "include": [".astro/types.d.ts", "**/*"],
-  "exclude": ["dist"]
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "strict": true,
+    "baseUrl": ".",
+    "types": ["node"],            // Nodeの型。Astroの型は env.d.ts で参照されます
+    "jsx": "react-jsx",
+    "allowJs": true
+  },
+  "include": [
+    ".astro/types.d.ts",          // Astroの型補助
+    "src",
+    "content",
+    "env.d.ts"
+  ],
+  "exclude": [
+    "dist",
+    "node_modules"
+  ]
 }

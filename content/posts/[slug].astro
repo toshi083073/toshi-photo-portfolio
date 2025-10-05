@@ -1,0 +1,32 @@
+---
+import { getArticleBySlug } from "../../lib/data";
+const { slug } = Astro.params;
+const post = await getArticleBySlug(slug!);
+if (!post) throw new Error("Post not found: " + slug);
+---
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>{post.title} — Toshi Kuramochi</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+      body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial;margin:0;padding:2rem;line-height:1.8;background:#fafafa;}
+      .container{max-width:840px;margin:0 auto;}
+      .small{color:#666;}
+      img{max-width:100%;height:auto;border-radius:12px;}
+      a{text-decoration:none;color:#06c;}
+      header a{margin-right:1rem;}
+      article{background:#fff;border:1px solid #eee;border-radius:12px;padding:1.25rem;}
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <header>
+        <a href="/">← Home</a>
+      </header>
+      <h1>{post.title}</h1>
+      <p class="small">{post.date}</p>
+      <article set:html={post.body} />
+    </div>
+  </body>
+</html>
