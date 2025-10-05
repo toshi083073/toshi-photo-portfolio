@@ -2,7 +2,7 @@
  * データ層：
  * 1) Phase1: markdown + jpgスキャン（無料）
  * 2) Phase2: Strapiへ切替（DATA_SOURCE=strapi）
- * 
+ *
  * jpgを public/photos に置くだけでカード生成。
  * 同名の md が content/photos にあれば、md側のfrontmatterで上書き（title/caption/tags/date等）
  */
@@ -21,6 +21,18 @@ const PHOTOS_DIR = path.join(root, "public", "photos");
 const PHOTOS_MD_DIR = path.join(root, "content", "photos");
 const POSTS_MD_DIR = path.join(root, "content", "posts");
 
+// GitHub Pages のサブパス対策
+const BASE = import.meta.env.BASE_URL || "/";
+
+// 先頭が "/" で始まるローカルパスだけ BASE を付ける（外部URLや既にBASE付きはそのまま）
+function withBase(p?: string): string | undefined {
+  if (!p) return p;
+  if (/^https?:\/\//i.test(p)) return p;
+  if (p.startsWith(BASE)) return p;
+  if (p.startsWith("/")) return `${BASE.replace(/\/$/, "")}${p}`;
+  return `${BASE}${p}`;
+}
+
 function ensureDir(p: string) {
   if (!fs.existsSync(p)) return [];
   return fs.readdirSync(p);
@@ -38,7 +50,11 @@ function titleFromSlug(slug: string) {
 
 function toIsoDate(d?: Date) {
   if (!d) return undefined;
-  try { return d.toISOString().slice(0, 10); } catch { return undefined; }
+  try {
+    return d.toISOString().slice(0, 10);
+  } catch {
+    return undefined;
+  }
 }
 
 // ---------- Phase1: Markdown + ファイルスキャン ----------
@@ -59,21 +75,25 @@ function readPhotoMdMap(): Record<string, any> {
 
 async function scanPhotosFromFS(): Promise<Photo[]> {
   const files = ensureDir(PHOTOS_DIR)
-    .filter(f => /\.(jpg|jpeg)$/i.test(f))
+    .filter((f) => /\.(jpg|jpeg)$/i.test(f))
     .sort();
+
   const mdMap = readPhotoMdMap();
 
   const results: Photo[] = [];
   for (const file of files) {
     const slug = toSlug(file);
     const full = path.join(PHOTOS_DIR, file);
-    const url = "/photos/" + file;
+    // ★ GitHub Pages で動く相対URLに修正
+    const url = withBase(`/photos/${file}`)!;
 
     // Exif 取得（DateTimeOriginal など）※無ければundefined
     let exif: any = {};
     try {
-      exif = await exifr.parse(full, { userComment: true }) || {};
-    } catch { /* 無視（Exif無い画像も多い） */ }
+      exif = (await exifr.parse(full, { userComment: true })) || {};
+    } catch {
+      /* 無視（Exif無い画像も多い） */
+    }
 
     // デフォルト（Exifやファイル名から）
     let item: Photo = {
@@ -90,7 +110,7 @@ async function scanPhotosFromFS(): Promise<Photo[]> {
         fNumber: exif?.FNumber,
         iso: exif?.ISO,
         exposureTime: exif?.ExposureTime ? `1/${Math.round(1 / exif.ExposureTime)}` : undefined,
-      }
+      },
     };
 
     // 同名の md があれば上書き
@@ -102,7 +122,8 @@ async function scanPhotosFromFS(): Promise<Photo[]> {
         date: d.date ?? item.date,
         caption: d.caption ?? item.caption,
         tags: d.tags ?? item.tags,
-        image: d.image ?? item.image,
+        // mdの image が "/photos/..." の場合も BASE を付与
+        image: withBase(d.image) ?? item.image,
       };
     }
     results.push(item);
@@ -113,7 +134,7 @@ async function scanPhotosFromFS(): Promise<Photo[]> {
 
 function readPostsFromMarkdown(): Article[] {
   if (!fs.existsSync(POSTS_MD_DIR)) return [];
-  const files = fs.readdirSync(POSTS_MD_DIR).filter(f => f.endsWith(".md"));
+  const files = fs.readdirSync(POSTS_MD_DIR).filter((f) => f.endsWith(".md"));
   const list = files.map((f) => {
     const raw = fs.readFileSync(path.join(POSTS_MD_DIR, f), "utf-8");
     const { data, content } = matter(raw);
@@ -123,8 +144,9 @@ function readPostsFromMarkdown(): Article[] {
       title: data.title,
       date: data.date,
       excerpt: data.excerpt,
-      cover: data.cover,
-      body: content
+      // cover が "/photos/..." のとき BASE を付与
+      cover: withBase(data.cover),
+      body: content,
     } as Article;
   });
   return list.sort((a, b) => b.date.localeCompare(a.date));
@@ -138,6 +160,7 @@ async function listPhotosFromStrapi(): Promise<Photo[]> {
     slug: p.attributes.slug,
     title: p.attributes.title,
     date: p.attributes.date,
+    // Strapiが相対URLの場合のためにwithBaseは使わない（外部/絶対URL想定）
     image: p.attributes.image?.data?.attributes?.url || "",
     caption: p.attributes.caption,
     tags: p.attributes.tags || [],
@@ -152,7 +175,7 @@ async function listArticlesFromStrapi(): Promise<Article[]> {
     date: a.attributes.date,
     excerpt: a.attributes.excerpt,
     cover: a.attributes.cover?.data?.attributes?.url || "",
-    body: a.attributes.body || ""
+    body: a.attributes.body || "",
   }));
 }
 
@@ -162,12 +185,12 @@ export async function listPhotos(): Promise<Photo[]> {
 }
 export async function getPhotoBySlug(slug: string): Promise<Photo | undefined> {
   const list = await listPhotos();
-  return list.find(p => p.slug === slug);
+  return list.find((p) => p.slug === slug);
 }
 export async function listArticles(): Promise<Article[]> {
   return DATA_SOURCE === "strapi" ? listArticlesFromStrapi() : readPostsFromMarkdown();
 }
 export async function getArticleBySlug(slug: string): Promise<Article | undefined> {
   const list = await listArticles();
-  return list.find(a => a.slug === slug);
+  return list.find((a) => a.slug === slug);
 }

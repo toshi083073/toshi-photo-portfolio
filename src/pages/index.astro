@@ -4,6 +4,7 @@ import { listPhotos, listArticles } from "../lib/data";
 
 const photos = await listPhotos();
 const posts  = await listArticles();
+const BASE = import.meta.env.BASE_URL || "/";
 ---
 
 <Layout>
@@ -30,7 +31,8 @@ const posts  = await listArticles();
       <header>
         <h1>Precious Moments — Toshi Kuramochi</h1>
         <nav>
-          <a href="/">Home</a>
+          <!-- Home もサブパスに対応 -->
+          <a href={BASE}>Home</a>
           <a href="https://www.instagram.com/">Instagram</a>
           <a href="https://toshi-substack.example/">Newsletter</a>
         </nav>
@@ -39,7 +41,9 @@ const posts  = await listArticles();
       <h2>Latest Photos</h2>
       <div class="grid">
         {photos.slice(0, 12).map(p => (
-          <a href={`/photos/${p.slug}`} class="card">
+          <!-- /photos/... -> BASE + photos/... -->
+          <a href={`${BASE}photos/${p.slug}`} class="card">
+            <!-- p.image は data.ts 側で BASE 付与済み（付与してなければ `${BASE}photos/${ファイル名}` にする） -->
             <img src={p.image} alt={p.title} loading="lazy" />
             <div class="meta">
               <strong>{p.title}</strong><br/>
@@ -52,8 +56,10 @@ const posts  = await listArticles();
       <h2>Journal</h2>
       <div class="grid">
         {posts.slice(0, 6).map(a => (
-          <a href={`/posts/${a.slug}`} class="card">
-            {a.cover && <img src={a.cover} alt={a.title} loading="lazy" />}
+          <!-- /posts/... -> BASE + posts/... -->
+          <a href={`${BASE}posts/${a.slug}`} class="card">
+            <!-- cover が "/photos/..." など絶対パスの場合に BASE を前置 -->
+            {a.cover && <img src={a.cover.startsWith('/') ? `${BASE.replace(/\/$/, '')}${a.cover}` : a.cover} alt={a.title} loading="lazy" />}
             <div class="meta">
               <strong>{a.title}</strong><br/>
               <span class="small">{a.date}</span>
