@@ -1,6 +1,11 @@
 ---
 import Layout from '../../layouts/Layout.astro';
-import { getPhotoBySlug } from '../../lib/data';
+import { listPhotos, getPhotoBySlug } from '../../lib/data';
+
+export async function getStaticPaths() {
+  const photos = await listPhotos();
+  return photos.map(p => ({ params: { slug: p.slug } }));
+}
 
 const { slug } = Astro.params;
 const photo = await getPhotoBySlug(slug!);
