@@ -1,0 +1,16 @@
+---
+interface Props {
+  image: string;
+  title?: string;
+  subtitle?: string;
+}
+const { image, title = "A Collection of Visual Stories", subtitle = "Tokyo / Street & Portrait" } = Astro.props;
+---
+<section style="position:relative;height:85vh;min-height:520px;border-radius:14px;overflow:hidden;">
+  <img src={image} alt={title} style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center;" loading="eager" />
+  <div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.25),rgba(0,0,0,.45));"></div>
+  <div style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);text-align:center;color:#fff;padding:1rem;max-width:900px;">
+    <h1 style="margin:.25rem 0 0;font-size:clamp(28px,4vw,56px);font-weight:700;letter-spacing:.02em;">{title}</h1>
+    <p style="margin:.25rem 0 0;font-size:clamp(14px,1.8vw,18px);opacity:.9">{subtitle}</p>
+  </div>
+</section>

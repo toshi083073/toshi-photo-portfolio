@@ -13,27 +13,10 @@ const BASE = import.meta.env.BASE_URL || "/";
 if (!photo) throw new Error("Photo not found: " + slug);
 ---
 
-<Layout>
-  <html lang="en">
-    <head>
-      <meta charset="utf-8" />
-      <title>{photo.title} — Toshi Kuramochi Photography</title>
-      <meta name="viewport" content="width=device-width, initial-scale=1" />
-      <style>
-        body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial;margin:0;padding:2rem;line-height:1.6;background:#fafafa;}
-        header{margin-bottom:2rem;}
-        img{max-width:100%;height:auto;border-radius:12px;display:block;margin:0 auto;}
-        .meta{color:#666;font-size:0.9rem;text-align:center;margin-top:0.5rem;}
-        .caption{max-width:720px;margin:1rem auto;color:#444;text-align:center;}
-        a.back{display:inline-block;margin-bottom:2rem;text-decoration:none;color:#06c;}
-      </style>
-    </head>
-    <body>
-      <a href={BASE} class="back">← Back to Home</a>
-      <h1 style="text-align:center;">{photo.title}</h1>
-      <img src={photo.image} alt={photo.title} />
-      <div class="meta">{photo.date}</div>
-      {photo.caption && <p class="caption">{photo.caption}</p>}
-    </body>
-  </html>
+<Layout title={`${photo.title} — Toshi Kuramochi Photography`}>
+  <a href={BASE} class="back">← Back to Home</a>
+  <h1 style="text-align:center;">{photo.title}</h1>
+  <img src={photo.image} alt={photo.title} class="responsive" />
+  <div class="small" style="text-align:center;">{photo.date}</div>
+  {photo.caption && <p style="max-width:720px;margin:1rem auto;text-align:center;color:#444;">{photo.caption}</p>}
 </Layout>

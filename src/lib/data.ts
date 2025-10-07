@@ -10,6 +10,7 @@ import fs from "node:fs";
 import path from "node:path";
 import matter from "gray-matter";
 import exifr from "exifr";
+import { marked } from "marked"; // ✅ Markdown → HTML 変換用
 import type { Photo, Article } from "./types";
 
 const DATA_SOURCE = process.env.DATA_SOURCE || "markdown";
@@ -44,7 +45,11 @@ function titleFromSlug(slug: string) {
 }
 function toIsoDate(d?: Date) {
   if (!d) return undefined;
-  try { return d.toISOString().slice(0, 10); } catch { return undefined; }
+  try {
+    return d.toISOString().slice(0, 10);
+  } catch {
+    return undefined;
+  }
 }
 
 // photos md を辞書化（slug => frontmatter）
@@ -62,23 +67,26 @@ function readPhotoMdMap(): Record<string, any> {
 }
 
 async function scanPhotosFromFS(): Promise<Photo[]> {
-  const files = ensureDir(PHOTOS_DIR).filter(f => /\.(jpg|jpeg)$/i.test(f)).sort();
+  const files = ensureDir(PHOTOS_DIR)
+    .filter((f) => /\.(jpg|jpeg)$/i.test(f))
+    .sort();
   const mdMap = readPhotoMdMap();
 
   const results: Photo[] = [];
   for (const file of files) {
     const slug = toSlug(file);
     const full = path.join(PHOTOS_DIR, file);
-    // ★ BASE 前置
     const url = withBase(`/photos/${file}`)!;
 
     let exif: any = {};
-    try { exif = await exifr.parse(full, { userComment: true }) || {}; } catch {}
+    try {
+      exif = (await exifr.parse(full, { userComment: true })) || {};
+    } catch {}
 
     let item: Photo = {
       slug,
       title: titleFromSlug(slug),
-      image: url, // ★ BASE付き
+      image: url,
       date: toIsoDate(exif?.DateTimeOriginal || exif?.CreateDate),
       caption: undefined,
       tags: [],
@@ -88,8 +96,10 @@ async function scanPhotosFromFS(): Promise<Photo[]> {
         focalLength: exif?.FocalLength ? `${exif.FocalLength}mm` : undefined,
         fNumber: exif?.FNumber,
         iso: exif?.ISO,
-        exposureTime: exif?.ExposureTime ? `1/${Math.round(1 / exif.ExposureTime)}` : undefined,
-      }
+        exposureTime: exif?.ExposureTime
+          ? `1/${Math.round(1 / exif.ExposureTime)}`
+          : undefined,
+      },
     };
 
     if (mdMap[slug]) {
@@ -100,7 +110,7 @@ async function scanPhotosFromFS(): Promise<Photo[]> {
         date: d.date ?? item.date,
         caption: d.caption ?? item.caption,
         tags: d.tags ?? item.tags,
-        image: withBase(d.image) ?? item.image, // ★ md指定も対応
+        image: withBase(d.image) ?? item.image,
       };
     }
     results.push(item);
@@ -108,9 +118,11 @@ async function scanPhotosFromFS(): Promise<Photo[]> {
   return results.sort((a, b) => (b.date || "").localeCompare(a.date || ""));
 }
 
+// ✅ MarkdownをHTML化して返す
+// ★ data.ts の readPostsFromMarkdown() だけ差し替え
 function readPostsFromMarkdown(): Article[] {
   if (!fs.existsSync(POSTS_MD_DIR)) return [];
-  const files = fs.readdirSync(POSTS_MD_DIR).filter(f => f.endsWith(".md"));
+  const files = fs.readdirSync(POSTS_MD_DIR).filter((f) => f.endsWith(".md"));
   const list = files.map((f) => {
     const raw = fs.readFileSync(path.join(POSTS_MD_DIR, f), "utf-8");
     const { data, content } = matter(raw);
@@ -120,12 +132,13 @@ function readPostsFromMarkdown(): Article[] {
       title: data.title,
       date: data.date,
       excerpt: data.excerpt,
-      cover: withBase(data.cover), // ★ BASE対応
-      body: content
+      cover: withBase(data.cover),
+      body: content,            // ← ここを“そのまま”渡す（HTML文字列）
     } as Article;
   });
   return list.sort((a, b) => b.date.localeCompare(a.date));
 }
+
 
 // Phase2（将来Strapi）
 async function listPhotosFromStrapi(): Promise<Photo[]> {
@@ -149,7 +162,7 @@ async function listArticlesFromStrapi(): Promise<Article[]> {
     date: a.attributes.date,
     excerpt: a.attributes.excerpt,
     cover: a.attributes.cover?.data?.attributes?.url || "",
-    body: a.attributes.body || ""
+    body: a.attributes.body || "",
   }));
 }
 
@@ -158,12 +171,28 @@ export async function listPhotos(): Promise<Photo[]> {
 }
 export async function getPhotoBySlug(slug: string): Promise<Photo | undefined> {
   const list = await listPhotos();
-  return list.find(p => p.slug === slug);
+  return list.find((p) => p.slug === slug);
 }
 export async function listArticles(): Promise<Article[]> {
-  return DATA_SOURCE === "strapi" ? listArticlesFromStrapi() : readPostsFromMarkdown();
+  return DATA_SOURCE === "strapi"
+    ? listArticlesFromStrapi()
+    : readPostsFromMarkdown();
 }
-export async function getArticleBySlug(slug: string): Promise<Article | undefined> {
+export async function getArticleBySlug(
+  slug: string
+): Promise<Article | undefined> {
   const list = await listArticles();
-  return list.find(a => a.slug === slug);
+  return list.find((a) => a.slug === slug);
+}
+// === 🎥 videos.json 読み込み ===
+export async function listVideos(): Promise<any[]> {
+  const videosPath = path.join(root, "src", "lib", "videos.json");
+  if (!fs.existsSync(videosPath)) return [];
+  const raw = fs.readFileSync(videosPath, "utf-8");
+  try {
+    return JSON.parse(raw);
+  } catch {
+    console.error("❌ videos.json の読み込みに失敗しました");
+    return [];
+  }
 }

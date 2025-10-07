@@ -1,0 +1,227 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { listPhotos, listArticles, listVideos } from "../lib/data";
+
+const photos = await listPhotos();
+const videos = await listVideos();   // videos は JSON からのみ取得
+const posts  = await listArticles();
+
+const BASE = (import.meta.env.BASE_URL || "/").replace(/\/?$/, "/");
+
+// Hero 画像（frontmatter に hero:true があれば優先）
+const heroPhoto = photos.find((p: any) => p?.hero) ?? photos[0];
+const hero = heroPhoto?.image ?? `${BASE}photos/_DSC02094_s%202.jpg`;
+
+// 写真+動画の混在配列（ここだけで定義）
+const media = [
+  ...videos, // videos.json の要素: { type:"youtube", id:"UJ5o-s1oiv4", title:"Tokyo Tower in August 2025" }
+  ...photos.slice(0, 12).map(p => ({
+    type: "photo",
+    src: p.image,
+    href: `${BASE}photos/${p.slug}`,
+    title: p.title,
+  })),
+];
+---
+
+<Layout title="Toshi Kuramochi — Visual Stories">
+  <!-- 💫 ナビ -->
+  <header class="nav">
+    <div class="logo">TOSHI</div>
+    <nav>
+      <a href={BASE}>Home</a>
+      <a href="#about">About</a>
+      <a href="#journal">Journal</a>
+      <a href="https://www.instagram.com/" target="_blank" rel="noopener">Instagram</a>
+      <a href={`${BASE}contact`}>Contact</a>
+    </nav>
+  </header>
+
+  <!-- 🌆 ヒーロー -->
+  <section class="hero">
+    <img src={hero} alt="Hero" loading="eager" decoding="async" />
+  </section>
+
+  <!-- 📸🎥 混在ギャラリー（3列） -->
+  <section class="gallery">
+    {media.map((m) => {
+      if (m.type === "photo") {
+        return (
+          <a href={m.href} class="card" aria-label={m.title}>
+            <div class="ratio">
+              <img src={m.src} alt={m.title} loading="lazy" decoding="async" />
+            </div>
+          </a>
+        );
+      } else if (m.type === "youtube") {
+        return (
+          <div class="card video" aria-label={m.title}>
+            <div class="ratio">
+              <iframe
+                src={`https://www.youtube.com/embed/${m.id}?autoplay=0&mute=1&rel=0&modestbranding=1`}
+                title={m.title}
+                allow="autoplay; fullscreen"
+                loading="lazy"
+              ></iframe>
+            </div>
+          </div>
+        );
+      } else {
+        return null;
+      }
+    })}
+  </section>
+
+  <!-- 📰 Journal -->
+  <section id="journal" class="journal">
+    <h2>Journal</h2>
+    <div class="posts">
+      {posts.slice(0, 4).map(a => (
+        <a href={`${BASE}posts/${a.slug}`} class="post" aria-label={a.title}>
+          {a.cover && <img src={a.cover} alt={a.title} loading="lazy" />}
+          <div class="meta">
+            <strong>{a.title}</strong>
+            <span>{a.date}</span>
+          </div>
+        </a>
+      ))}
+    </div>
+  </section>
+
+  <!-- ⚙️ Footer -->
+  <footer class="footer">
+    <p>© {new Date().getFullYear()} Toshi Kuramochi · Visual Stories</p>
+  </footer>
+</Layout>
+
+<style is:global>
+  /* === 背景 & 全体設定 === */
+  body {
+    background-color: #000;
+    color: #f0f0f0;
+    font-family: 'Inter', sans-serif;
+    margin: 0;
+    padding: 0;
+  }
+
+  /* === レイアウト幅（Monaris風：広め） === */
+  .container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 1rem;
+  }
+
+  /* === Hero === */
+  .hero {
+    max-width: 1400px;
+    margin: 0 auto 1.2rem;
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .hero img {
+    width: 100%;
+    height: 80vh;
+    object-fit: cover;
+    display: block;
+  }
+
+  /* === ギャラリー（写真＋動画混在） === */
+  .gallery {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: 4px;
+    max-width: 1400px;
+    margin: 0 auto 3rem;
+  }
+  .gallery img {
+    width: 100%;
+    height: auto;
+    object-fit: cover;
+    display: block;
+    transition: transform .3s;
+  }
+  .gallery img:hover { transform: scale(1.03); }
+
+  /* 写真・動画の統一比率 */
+  .gallery .ratio {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .gallery .ratio > * {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  /* === Journal === */
+  .journal {
+    max-width: 1200px;
+    margin: 0 auto 3rem;
+    text-align: center;
+  }
+  .journal .posts {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 1.5rem;
+  }
+  .journal .post img {
+    width: 100%;
+    height: auto;
+    object-fit: cover;
+    border-radius: 8px;
+  }
+
+  /* === ナビゲーション === */
+  .nav {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 1rem 2rem;
+    display: flex !important;
+    align-items: center !important;
+    gap: 1rem;
+  }
+  .nav .logo {
+    flex: 0 0 auto;
+    color: #d7b354 !important;
+    letter-spacing: .08em;
+    font-weight: 700;
+  }
+  .nav nav {
+    margin-left: auto !important;
+    display: flex;
+    gap: 1.5rem;
+  }
+  .nav nav a:link,
+  .nav nav a:visited {
+    color: #d7b354 !important;
+    text-decoration: none;
+  }
+  .nav nav a:hover {
+    opacity: .7;
+    color: #d7b354 !important;
+  }
+
+  /* === ページ全体のリンク統一 === */
+  a:not(.nav a) {
+    color: #d7b354 !important;
+    text-decoration: none;
+    transition: opacity .3s;
+  }
+  a:not(.nav a):hover { opacity: 0.8; }
+
+  /* === 見出し・強調テキスト === */
+  h1, h2, h3, strong, .meta strong, .journal h2, .gallery h2 {
+    color: #d7b354 !important;
+  }
+
+  /* === メディアクエリ === */
+  @media (max-width: 900px) {
+    .hero img { height: 60vh; }
+    .gallery { grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); }
+  }
+</style>

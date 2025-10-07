@@ -1,0 +1,13 @@
+---
+const BASE = (import.meta.env.BASE_URL || "/").replace(/\/?$/, "/");
+---
+<nav style="display:flex;justify-content:space-between;align-items:center;gap:.5rem;margin:.5rem 0 1.25rem;">
+  <div style="font-weight:600;letter-spacing:.02em">Toshi Kuramochi</div>
+  <div style="display:flex;gap:1rem;font-size:.95rem;">
+    <a href={BASE}>Home</a>
+    <a href="https://www.instagram.com/" target="_blank" rel="noopener">Instagram</a>
+    <!-- Journal は landingpageTest の #journal に飛ばす -->
+    <a href={`${BASE}landingpageTest#journal`}>Journal</a>
+    <a href={`${BASE}contact`}>Contact</a>
+  </div>
+</nav>

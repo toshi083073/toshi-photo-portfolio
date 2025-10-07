@@ -1,41 +1,39 @@
 ---
 import Layout from '../../layouts/Layout.astro';
-import { listArticles, getArticleBySlug } from '../../lib/data';
+import { getArticleBySlug, listArticles } from '../../lib/data';
 
 export async function getStaticPaths() {
   const posts = await listArticles();
-  return posts.map(a => ({ params: { slug: a.slug } }));
+  return posts.map((p) => ({ params: { slug: p.slug } }));
 }
 
 const { slug } = Astro.params;
 const post = await getArticleBySlug(slug!);
-const BASE = import.meta.env.BASE_URL || "/";
-if (!post) throw new Error("Post not found: " + slug);
+if (!post) throw new Error(`Post not found: ${slug}`);
 ---
 
-<Layout>
-  <html lang="en">
-    <head>
-      <meta charset="utf-8" />
-      <title>{post.title} — Journal | Toshi Kuramochi</title>
-      <meta name="viewport" content="width=device-width, initial-scale=1" />
-      <style>
-        body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial;margin:0;padding:2rem;line-height:1.8;background:#fafafa;}
-        article{max-width:720px;margin:auto;}
-        header{margin-bottom:2rem;}
-        img{max-width:100%;border-radius:12px;margin:1rem 0;}
-        a.back{display:inline-block;margin-bottom:2rem;text-decoration:none;color:#06c;}
-        .meta{color:#666;font-size:0.9rem;margin-bottom:1rem;}
-      </style>
-    </head>
-    <body>
-      <a href={BASE} class="back">← Back to Home</a>
-      <article>
-        <h1>{post.title}</h1>
-        <div class="meta">{post.date}</div>
-        {post.cover && <img src={post.cover} alt={post.title} />}
-        <div innerHTML={post.body} />
-      </article>
-    </body>
-  </html>
+<Layout title={post.title}>
+  <article style="max-width:800px;margin:0 auto;padding:1rem 0 2rem;">
+    <h1 style="margin:.25rem 0 0 0;">{post.title}</h1>
+    <div style="opacity:.7;margin-bottom:1rem;">{post.date}</div>
+    {post.cover && (
+      <img
+        src={post.cover}
+        alt={post.title}
+        style="width:100%;height:auto;border-radius:8px;margin:0 0 1rem;"
+      />
+    )}
+
+    <!-- ★ ここが超重要：innerHTML ではなく set:html を使う -->
+    {post.body && <div class="article-body" set:html={post.body} /> }
+  </article>
 </Layout>
+
+<style>
+.article-body {
+  line-height: 1.75;
+  font-size: 1.05rem;
+}
+.article-body p { margin: 1rem 0; }
+.article-body img { width: 100%; border-radius: 6px; margin: 1rem 0; }
+</style>
