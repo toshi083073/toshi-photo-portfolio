@@ -1,20 +1,18 @@
 /**
  * データ層：
  * 1) Phase1: markdown + jpgスキャン（無料）
- * 2) Phase2: JSON管理 or Strapiへ切替（DATA_SOURCE指定）
+ * 2) Phase2: Strapiへ切替（DATA_SOURCE=strapi）
  *
  * jpgを public/photos に置くだけでカード生成。
- * 同名の md が content/photos にあれば、md側frontmatterで上書き（title/caption/tags/date等）
+ * 同名の md が content/photos にあれば、md 側の frontmatter で上書き（title/caption/tags/date 等）
  */
-
 import fs from "node:fs";
 import path from "node:path";
 import matter from "gray-matter";
 import exifr from "exifr";
-import { marked } from "marked";
 import type { Photo, Article } from "./types";
 
-const DATA_SOURCE = process.env.DATA_SOURCE || "markdown"; // "json" | "markdown" | "strapi"
+const DATA_SOURCE = process.env.DATA_SOURCE || "markdown";
 const STRAPI_URL = process.env.STRAPI_URL || "";
 
 const root = process.cwd();
@@ -24,6 +22,7 @@ const POSTS_MD_DIR = path.join(root, "content", "posts");
 
 // GitHub Pages のサブパス対応
 const BASE = import.meta.env.BASE_URL || "/";
+// 先頭が "/" のローカルパスなら BASE を前置（外部URLはそのまま）
 function withBase(p?: string): string | undefined {
   if (!p) return p;
   if (/^https?:\/\//i.test(p)) return p;
@@ -32,27 +31,6 @@ function withBase(p?: string): string | undefined {
   return `${BASE}${p}`;
 }
 
-// ========== 📸 型定義 ==========
-export type YouTube = {
-  type: "youtube";
-  id: string;
-  title: string;
-  date?: string;
-};
-
-export type Mp4 = {
-  type: "mp4";
-  src: string;
-  poster?: string;
-  title: string;
-  date?: string;
-};
-
-type PhotoJson = { type: "photo" } & Photo;
-type MediaJson = PhotoJson | YouTube | Mp4;
-export type Video = YouTube | Mp4;
-
-// ========== 📁 ユーティリティ ==========
 function ensureDir(p: string) {
   if (!fs.existsSync(p)) return [];
   return fs.readdirSync(p);
@@ -73,7 +51,7 @@ function toIsoDate(d?: Date) {
   }
 }
 
-// ========== 📂 Markdown写真読み込み ==========
+// photos md を辞書化（slug => frontmatter）
 function readPhotoMdMap(): Record<string, any> {
   const map: Record<string, any> = {};
   if (!fs.existsSync(PHOTOS_MD_DIR)) return map;
@@ -99,30 +77,33 @@ async function scanPhotosFromFS(): Promise<Photo[]> {
     const full = path.join(PHOTOS_DIR, file);
     const url = withBase(`/photos/${file}`)!;
 
-    let exif: any = {};
+    let exifData: any = {};
     try {
-      exif = (await exifr.parse(full, { userComment: true })) || {};
-    } catch {}
+      exifData = (await exifr.parse(full, { userComment: true })) || {};
+    } catch {
+      // Exif 無しは無視
+    }
 
     let item: Photo = {
       slug,
       title: titleFromSlug(slug),
       image: url,
-      date: toIsoDate(exif?.DateTimeOriginal || exif?.CreateDate),
+      date: toIsoDate(exifData?.DateTimeOriginal || exifData?.CreateDate),
       caption: undefined,
       tags: [],
       exif: {
-        make: exif?.Make,
-        model: exif?.Model,
-        focalLength: exif?.FocalLength ? `${exif.FocalLength}mm` : undefined,
-        fNumber: exif?.FNumber,
-        iso: exif?.ISO,
-        exposureTime: exif?.ExposureTime
-          ? `1/${Math.round(1 / exif.ExposureTime)}`
+        make: exifData?.Make,
+        model: exifData?.Model,
+        focalLength: exifData?.FocalLength ? `${exifData.FocalLength}mm` : undefined,
+        fNumber: exifData?.FNumber,
+        iso: exifData?.ISO,
+        exposureTime: exifData?.ExposureTime
+          ? `1/${Math.round(1 / exifData.ExposureTime)}`
           : undefined,
       },
     };
 
+    // 同名 md があれば上書き
     if (mdMap[slug]) {
       const d = mdMap[slug];
       item = {
@@ -139,10 +120,11 @@ async function scanPhotosFromFS(): Promise<Photo[]> {
   return results.sort((a, b) => (b.date || "").localeCompare(a.date || ""));
 }
 
-// ========== 📰 Markdown記事読み込み ==========
+// ✅ Markdown をそのまま body に入れて返す（描画時に Markdown→HTML へ）
 function readPostsFromMarkdown(): Article[] {
   if (!fs.existsSync(POSTS_MD_DIR)) return [];
   const files = fs.readdirSync(POSTS_MD_DIR).filter((f) => f.endsWith(".md"));
+
   const list = files.map((f) => {
     const raw = fs.readFileSync(path.join(POSTS_MD_DIR, f), "utf-8");
     const { data, content } = matter(raw);
@@ -153,7 +135,64 @@ function readPostsFromMarkdown(): Article[] {
       date: data.date,
       excerpt: data.excerpt,
       cover: withBase(data.cover),
-      body: content,
+      body: content, // ← Markdown文字列（posts/[slug].astro で HTML 化）
     } as Article;
   });
-  return list.so
+
+  return list.sort((a, b) => b.date.localeCompare(a.date));
+}
+
+// Phase2（将来 Strapi）
+async function listPhotosFromStrapi(): Promise<Photo[]> {
+  const r = await fetch(`${STRAPI_URL}/api/photos?populate=*`);
+  const j = await r.json();
+  return (j.data || []).map((p: any) => ({
+    slug: p.attributes.slug,
+    title: p.attributes.title,
+    date: p.attributes.date,
+    image: p.attributes.image?.data?.attributes?.url || "",
+    caption: p.attributes.caption,
+    tags: p.attributes.tags || [],
+  }));
+}
+async function listArticlesFromStrapi(): Promise<Article[]> {
+  const r = await fetch(`${STRAPI_URL}/api/articles?populate=*`);
+  const j = await r.json();
+  return (j.data || []).map((a: any) => ({
+    slug: a.attributes.slug,
+    title: a.attributes.title,
+    date: a.attributes.date,
+    excerpt: a.attributes.excerpt,
+    cover: a.attributes.cover?.data?.attributes?.url || "",
+    body: a.attributes.body || "",
+  }));
+}
+
+// === 公開 API ===
+export async function listPhotos(): Promise<Photo[]> {
+  return DATA_SOURCE === "strapi" ? listPhotosFromStrapi() : scanPhotosFromFS();
+}
+export async function getPhotoBySlug(slug: string): Promise<Photo | undefined> {
+  const list = await listPhotos();
+  return list.find((p) => p.slug === slug);
+}
+export async function listArticles(): Promise<Article[]> {
+  return DATA_SOURCE === "strapi" ? listArticlesFromStrapi() : readPostsFromMarkdown();
+}
+export async function getArticleBySlug(slug: string): Promise<Article | undefined> {
+  const list = await listArticles();
+  return list.find((a) => a.slug === slug);
+}
+
+// === 🎥 videos.json 読み込み ===
+export async function listVideos(): Promise<any[]> {
+  const videosPath = path.join(root, "src", "lib", "videos.json");
+  if (!fs.existsSync(videosPath)) return [];
+  const raw = fs.readFileSync(videosPath, "utf-8");
+  try {
+    return JSON.parse(raw);
+  } catch {
+    console.error("❌ videos.json の読み込みに失敗しました");
+    return [];
+  }
+}
