@@ -84,7 +84,7 @@ const title = Astro.props.title || "Toshi Kuramochi Photography";
     gtag('js', new Date());
     gtag('config', 'G-1D4S1MCMQP');
   </script>
-  
+
   </head>
 
   <body>
@@ -92,5 +92,42 @@ const title = Astro.props.title || "Toshi Kuramochi Photography";
       <slot />
       <footer>© {new Date().getFullYear()} Toshi Kuramochi · Built with Astro</footer>
     </div>
+
+<script>
+  // 汎用クリックイベントの追跡
+  document.addEventListener("click", function (e) {
+    const target = e.target.closest("a, button, img, video, iframe");
+    if (!target) return;
+
+    // aタグ
+    if (target.tagName === "A" && target.href) {
+      gtag("event", "click_link", {
+        event_category: "interaction",
+        event_label: target.href,
+        value: 1
+      });
+    }
+
+    // 画像クリック
+    if (target.tagName === "IMG") {
+      gtag("event", "click_image", {
+        event_category: "gallery",
+        event_label: target.src,
+        value: 1
+      });
+    }
+
+    // 動画クリック or 再生
+    if (target.tagName === "VIDEO" || target.tagName === "IFRAME") {
+      gtag("event", "play_video", {
+        event_category: "media",
+        event_label: target.currentSrc || target.src || target.title,
+        value: 1
+      });
+    }
+  });
+</script>
+
+
   </body>
 </html>
