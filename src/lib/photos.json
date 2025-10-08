@@ -1,0 +1,16 @@
+[
+  {
+    "type": "photo",
+    "slug": "tokyo-street-001",
+    "title": "Shibuya crossing",
+    "date": "2025-10-01",
+    "image": "/photos/_DSC02012_s.jpg",
+    "hero": true,
+    "tags": ["street","tokyo"]
+  },
+  {
+    "type": "youtube",
+    "id": "UJ5o-s1oiv4",
+    "title": "Tokyo Tower in August 2025"
+  }
+]

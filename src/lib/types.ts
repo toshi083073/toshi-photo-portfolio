@@ -24,3 +24,15 @@ export type Article = {
   cover?: string;
   body?: string;      // md本文（詳細ページで使う）
 };
+
+// 📸 JSON形式の写真リストを読み込み
+import photosJson from "./photos.json" assert { type: "json" };
+
+export async function listPhotos(): Promise<Photo[]> {
+  return photosJson.filter(p => p.type === "photo");
+}
+
+export async function listVideos(): Promise<any[]> {
+  return photosJson.filter(p => p.type === "youtube" || p.type === "mp4");
+}
+

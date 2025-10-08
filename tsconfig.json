@@ -8,8 +8,25 @@
     "baseUrl": ".",
     "types": ["astro/client", "node"],
     "jsx": "react-jsx",
-    "allowJs": true
+    "allowJs": true,
+
+    /* ✅ JSONインポート対応 */
+    "resolveJsonModule": true,
+
+    /* ✅ import で .ts / .astro / .json 拡張子省略OK */
+    "allowImportingTsExtensions": false,
+
+    /* ✅ ECMAScriptモジュール互換（Astroに最適） */
+    "esModuleInterop": true,
+    "moduleDetection": "force"
   },
-  "include": [".astro/types.d.ts", "src", "src/env.d.ts"],
+
+  /* ✅ Astroプロジェクトで必要な型解決範囲 */
+  "include": [
+    ".astro/types.d.ts",
+    "src",
+    "src/env.d.ts"
+  ],
+
   "exclude": ["dist"]
 }
