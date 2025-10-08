@@ -32,12 +32,52 @@ body {
   gap: 1rem;
 }
 
-.nav .logo {
+/* .nav .logo {
   flex: 0 0 auto;
   color: #d7b354;
   letter-spacing: 0.08em;
   font-weight: 700;
+} */
+
+/* === ロゴ全体 === */
+.nav .logo a {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  color: #d7b354;
 }
+
+/* === 円形ロゴ（T） === */
+.circle-logo {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: #d7b354;      /* ゴールド背景 */
+  color: #000;              /* 中央文字は黒で高コントラスト */
+  font-weight: 700;
+  font-size: 1.2rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  transition: transform .2s ease, opacity .2s ease;
+}
+.circle-logo:hover {
+  transform: scale(1.05);
+  opacity: 0.9;
+}
+
+/* === 「Toshi」文字 === */
+.logo-text {
+  font-weight: 700;
+  font-size: 1.1rem;
+  letter-spacing: 0.06em;
+  color: #d7b354;
+  text-transform: none;
+}
+
 
 .nav nav {
   margin-left: auto;
