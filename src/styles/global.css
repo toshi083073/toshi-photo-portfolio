@@ -1,0 +1,228 @@
+/* ================================
+   🌆 Global Style — Toshi Portfolio
+   ================================ */
+
+/* === 全体設定 === */
+body {
+  background-color: #000;
+  color: #f0f0f0;
+  font-family: 'Inter', 'Noto Sans JP', sans-serif;
+  margin: 0;
+  padding: 0;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* === レイアウト幅 === */
+.container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+/* ====================
+   🧭 Navigation Header
+   ==================== */
+.nav {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 1rem 0;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.nav .logo {
+  flex: 0 0 auto;
+  color: #d7b354;
+  letter-spacing: 0.08em;
+  font-weight: 700;
+}
+
+.nav nav {
+  margin-left: auto;
+  display: flex;
+  gap: 1.5rem;
+}
+
+.nav nav a {
+  color: #d7b354;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.nav nav a:hover {
+  opacity: 0.7;
+}
+
+/* === SNSアイコン (右端) === */
+.nav .social {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-left: 20px; /* Contactとの間隔 */
+}
+
+.nav .social img {
+  width: 18px;
+  height: 18px;
+  display: block;
+  object-fit: contain;
+  transition: transform 0.2s, opacity 0.2s;
+  opacity: 0.95;
+  filter: brightness(1.08) contrast(1.05); /* ← ゴールドに軽いツヤだけ */
+}
+
+.nav .social a:hover img {
+  transform: scale(1.08);
+  opacity: 1;
+}
+
+/* ====================
+   🌇 Hero Section
+   ==================== */
+.hero {
+  max-width: 1400px;
+  margin: 0 auto 1.2rem;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.hero img {
+  width: 100%;
+  height: 80vh;
+  object-fit: cover;
+  display: block;
+}
+
+/* ====================
+   📸 Gallery
+   ==================== */
+.gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  gap: 4px;
+  max-width: 1400px;
+  margin: 0 auto 3rem;
+}
+
+.gallery img {
+  width: 100%;
+  height: auto;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.3s;
+}
+
+.gallery img:hover {
+  transform: scale(1.03);
+}
+
+/* 比率固定 */
+.gallery .ratio {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.gallery .ratio > * {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* ====================
+   📰 Journal Section
+   ==================== */
+.journal {
+  max-width: 1200px;
+  margin: 0 auto 3rem;
+  text-align: center;
+}
+
+.journal .posts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1.5rem;
+}
+
+.journal .post img {
+  width: 100%;
+  height: auto;
+  object-fit: cover;
+  border-radius: 8px;
+}
+
+/* ====================
+   ⚙️ Footer
+   ==================== */
+.footer {
+  text-align: center;
+  color: #c8c0a0;
+  padding: 2rem 0 3rem;
+}
+
+.footer .footer-social {
+  display: flex;
+  justify-content: center;
+  gap: 18px;
+  margin-bottom: 0.75rem;
+}
+
+.footer .footer-social img {
+  width: 18px;
+  height: 18px;
+  display: block;
+  object-fit: contain;
+  opacity: 0.92;
+  transition: transform 0.2s, opacity 0.2s;
+  filter: brightness(1.08) contrast(1.05); /* ← ゴールドに軽いツヤだけ */
+}
+
+.footer .footer-social a:hover img {
+  transform: scale(1.08);
+  opacity: 1;
+}
+
+/* ====================
+   🔤 Text & Link Base
+   ==================== */
+a:not(.nav a) {
+  color: #d7b354;
+  text-decoration: none;
+  transition: opacity 0.3s;
+}
+
+a:not(.nav a):hover {
+  opacity: 0.8;
+}
+
+h1,
+h2,
+h3,
+strong,
+.meta strong,
+.journal h2,
+.gallery h2 {
+  color: #d7b354;
+}
+
+/* ====================
+   📱 Responsive
+   ==================== */
+@media (max-width: 900px) {
+  .hero img {
+    height: 60vh;
+  }
+  .gallery {
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  }
+  .nav .social img {
+    width: 22px;
+    height: 22px;
+  }
+}
