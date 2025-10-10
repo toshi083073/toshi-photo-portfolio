@@ -1,6 +1,7 @@
 import { defineConfig } from 'astro/config';
 
 export default defineConfig({
-  site: 'https://toshi083073.github.io',
-  base: '/toshi-photo-portfolio',
+  site: 'https://toshikuramochi.com',
+  base: '/',
+  output: 'static',  // ← 追加しておくと安心（静的ビルド明示）
 });
