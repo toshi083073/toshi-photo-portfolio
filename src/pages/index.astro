@@ -60,39 +60,43 @@ const media = [
   </header>
 
   <!-- 🌆 ヒーロー -->
-  <section class="hero">
-    <img src={hero} alt="Hero" loading="eager" decoding="async" />
-  </section>
+<section class="hero">
+  <img src={hero} alt="Hero" loading="eager" decoding="async" />
+</section>
 
-  <!-- 📸🎥 混在ギャラリー（3列） -->
-  <section class="gallery">
-    {media.map((m) => {
-      if (m.type === "photo") {
-        return (
-          <a href={m.href} class="card" aria-label={m.title}>
-            <div class="ratio">
-              <img src={m.src} alt={m.title} loading="lazy" decoding="async" />
-            </div>
-          </a>
-        );
-      } else if (m.type === "youtube") {
-        return (
-          <div class="card video" aria-label={m.title}>
-            <div class="ratio">
-              <iframe
-                src={`https://www.youtube.com/embed/${m.id}?autoplay=0&mute=1&rel=0&modestbranding=1`}
-                title={m.title}
-                allow="autoplay; fullscreen"
-                loading="lazy"
-              ></iframe>
-            </div>
-          </div>
-        );
-      } else {
-        return null;
-      }
-    })}
-  </section>
+<!-- 📸 Photos -->
+<section class="gallery">
+  <h2 class="section-title">Photos</h2>
+  <div class="grid">
+    {photos.slice(0, 12).map((p) => (
+      <a href={`${BASE}photos/${p.slug}`} class="card" aria-label={p.title}>
+        <div class="ratio">
+          <img src={p.image} alt={p.title} loading="lazy" decoding="async" />
+        </div>
+      </a>
+    ))}
+  </div>
+</section>
+
+<!-- 🎥 Movies -->
+<section class="gallery">
+  <h2 class="section-title">Movies</h2>
+  <div class="grid">
+    {videos.map((v) => (
+      <div class="card video" aria-label={v.title}>
+        <div class="ratio">
+          <iframe
+            src={`https://www.youtube.com/embed/${v.id}?autoplay=0&mute=1&rel=0&modestbranding=1`}
+            title={v.title}
+            allow="autoplay; fullscreen"
+            loading="lazy"
+          ></iframe>
+        </div>
+      </div>
+    ))}
+  </div>
+</section>
+
 
   <!-- 📰 Journal -->
   <section id="journal" class="journal">

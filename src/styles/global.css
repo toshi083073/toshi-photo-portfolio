@@ -179,7 +179,7 @@ body {
    📰 Journal Section
    ==================== */
 .journal {
-  max-width: 1200px;
+  max-width: 1400px;
   margin: 0 auto 3rem;
   text-align: center;
 }
@@ -265,4 +265,35 @@ strong,
     width: 22px;
     height: 22px;
   }
+
+
+
+}
+/* ====================
+   🎬 Section Titles Fix
+   ==================== */
+
+/* 1) .galleryはコンテナとしてblockに戻す */
+.gallery {
+  display: block !important;
+  max-width: 1400px;
+  margin: 0 auto 3rem;
+}
+
+/* 2) 中の.gridがカード3列を作る主体 */
+.gallery .grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  gap: 4px;
+}
+
+/* 3) タイトルをJournalと同じように中央配置 */
+.gallery .section-title {
+  display: block;
+  width: 100%;
+  text-align: center;
+  font-size: 1.6rem;
+  font-weight: 600;
+  margin: 4rem 0 1rem;
+  letter-spacing: 0.05em;
 }

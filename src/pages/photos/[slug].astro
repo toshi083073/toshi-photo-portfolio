@@ -1,22 +1,215 @@
 ---
 import Layout from '../../layouts/Layout.astro';
-import { listPhotos, getPhotoBySlug } from '../../lib/data';
+import { listPhotos } from '../../lib/data';
 
+// ---- 静的ビルド対応 ----
 export async function getStaticPaths() {
   const photos = await listPhotos();
-  return photos.map(p => ({ params: { slug: p.slug } }));
+  return photos
+    .filter((p: any) => p?.slug)
+    .map((p: any) => ({ params: { slug: p.slug } }));
 }
 
 const { slug } = Astro.params;
-const photo = await getPhotoBySlug(slug!);
-const BASE = import.meta.env.BASE_URL || "/";
-if (!photo) throw new Error("Photo not found: " + slug);
+const photos = await listPhotos();
+const index = photos.findIndex((p: any) => p?.slug === slug);
+const photo = index >= 0 ? photos[index] : null;
+
+const prev = index > 0 ? photos[index - 1] : null;
+const next = index >= 0 && index < photos.length - 1 ? photos[index + 1] : null;
+
+const BASE = (import.meta.env.BASE_URL || '/').replace(/\/?$/, '/');
+const homeHref = BASE;
+
+const src = photo?.url ?? photo?.src ?? photo?.image ?? '';
+const alt = photo?.alt ?? photo?.title ?? '';
 ---
 
-<Layout title={`${photo.title} — Toshi Kuramochi Photography`}>
-  <a href={BASE} class="back">← Back to Home</a>
-  <h1 style="text-align:center;">{photo.title}</h1>
-  <img src={photo.image} alt={photo.title} class="responsive" />
-  <div class="small" style="text-align:center;">{photo.date}</div>
-  {photo.caption && <p style="max-width:720px;margin:1rem auto;text-align:center;color:#444;">{photo.caption}</p>}
+<Layout title={photo?.title ?? 'Photo'} noHeader={true}>
+  <main class="viewer">
+    <!-- 左上 SNS（リンク修正・Substack追加） -->
+    <nav class="social">
+      <a href="https://x.com/10tksom28" target="_blank" rel="noopener" aria-label="X (Twitter)">
+        <img src={`${BASE}icons/x.svg`} alt="X" />
+      </a>
+      <a href="https://www.youtube.com/@toshkuram" target="_blank" rel="noopener" aria-label="YouTube">
+        <img src={`${BASE}icons/youtube.svg`} alt="YouTube" />
+      </a>
+      <a href="https://toshi0830.substack.com/" target="_blank" rel="noopener" aria-label="Substack">
+        <img src={`${BASE}icons/substack.svg`} alt="Substack" />
+      </a>
+      <a href="https://www.instagram.com/toshi30aug/" target="_blank" rel="noopener" aria-label="Instagram">
+        <img src={`${BASE}icons/instagram.svg`} alt="Instagram" />
+      </a>
+    </nav>
+
+    <!-- 右上 × -->
+    <a id="closeBtn" class="close-button" href={homeHref} aria-label="Close">✕</a>
+
+    <!-- 画像表示 -->
+    <figure class="stage">
+      {src ? (
+        <img src={src} alt={alt} loading="eager" decoding="async" />
+      ) : (
+        <div class="placeholder">Image not found</div>
+      )}
+    </figure>
+
+    <!-- 左右ナビ -->
+    {prev && (
+      <a class="nav-button prev" href={`${BASE}photos/${prev.slug}`} aria-label="Previous photo">←</a>
+    )}
+    {next && (
+      <a class="nav-button next" href={`${BASE}photos/${next.slug}`} aria-label="Next photo">→</a>
+    )}
+  </main>
+
+  <style>
+    :root {
+      --fg: #ffffff;
+      --fg-dim: rgba(255,255,255,.8);
+      --bg: #000000;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      overflow: hidden; /* 横スクロール防止 */
+    }
+
+    .viewer {
+      position: relative;
+      width: 100%;
+      height: 100dvh;
+      background: var(--bg);
+      color: var(--fg);
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* SNS */
+    .social {
+      position: fixed;
+      top: 16px;
+      left: 16px;
+      display: flex;
+      gap: 12px;
+      z-index: 40;
+    }
+    .social img {
+      width: 22px;
+      height: 22px;
+      opacity: .85;
+      transition: opacity .2s ease;
+    }
+    .social a:hover img { opacity: .55; }
+
+    /* Closeボタン（枠なし） */
+    .close-button {
+      position: fixed;
+      top: 16px;
+      right: 18px;
+      z-index: 50;
+      text-decoration: none;
+      font-size: 22px;
+      line-height: 1;
+      color: var(--fg);
+      opacity: .85;
+      transition: opacity .2s ease, transform .1s ease;
+      background: none;
+      border: none;
+      box-shadow: none;
+      padding: 4px;
+    }
+    .close-button:hover { opacity: .55; }
+    .close-button:active { transform: scale(0.96); }
+
+    /* ステージ（画像領域） */
+    .stage {
+      margin: 0;
+      width: 100%;
+      height: 100%;
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+      padding: 0;
+    }
+
+    /* 画像サイズ（安定バランス版） */
+    .stage img {
+      max-width: min(94vw, 1800px);
+      max-height: 90dvh;
+      width: auto;
+      height: auto;
+      object-fit: contain;
+      display: block;
+      margin: 0 auto;
+      border: none;
+      box-shadow: none;
+    }
+
+    .placeholder {
+      color: var(--fg-dim);
+      font-size: 14px;
+    }
+
+    /* ナビ矢印（枠なし） */
+    .nav-button {
+      position: fixed;
+      top: 50%;
+      transform: translateY(-50%);
+      z-index: 45;
+      text-decoration: none;
+      font-size: 22px;
+      line-height: 1;
+      color: var(--fg);
+      opacity: .8;
+      padding: 6px 8px;
+      background: none;
+      border: none;
+      user-select: none;
+      transition: opacity .2s ease, transform .1s ease;
+    }
+    .nav-button:hover { opacity: .5; }
+    .nav-button:active { transform: translateY(-50%) scale(0.98); }
+    .nav-button.prev { left: clamp(8px, 2vw, 20px); }
+    .nav-button.next { right: clamp(8px, 2vw, 20px); }
+
+    @media (max-width: 640px) {
+      .close-button { top: 10px; right: 12px; font-size: 20px; }
+      .social { top: 10px; left: 10px; }
+      .nav-button { font-size: 20px; }
+      .stage img { max-width: 96vw; max-height: 84dvh; }
+    }
+  </style>
+
+  <script is:inline>
+    const HOME_HREF = ${JSON.stringify(homeHref)};
+
+    // ×クリックで常にHOMEへ
+    const closeBtn = document.getElementById('closeBtn');
+    closeBtn?.addEventListener('click', (e) => {
+      e.preventDefault();
+      location.href = HOME_HREF;
+    });
+
+    // ← / → / Esc
+    document.addEventListener('keydown', (e) => {
+      const prevEl = document.querySelector('.nav-button.prev');
+      const nextEl = document.querySelector('.nav-button.next');
+
+      if (e.key === 'ArrowLeft' && prevEl && prevEl instanceof HTMLAnchorElement) {
+        e.preventDefault();
+        window.location.href = prevEl.href;
+      } else if (e.key === 'ArrowRight' && nextEl && nextEl instanceof HTMLAnchorElement) {
+        e.preventDefault();
+        window.location.href = nextEl.href;
+      } else if (e.key === 'Escape') {
+        e.preventDefault();
+        window.location.href = HOME_HREF;
+      }
+    });
+  </script>
 </Layout>
